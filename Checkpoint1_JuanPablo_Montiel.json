@@ -1,0 +1,312 @@
+{
+  "name": "Checkpoint1_JuanPablo_Montiel",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -208,
+        -64
+      ],
+      "id": "b17797d6-4e47-4c5a-88f4-0efbd1779ba3",
+      "name": "Telegram Trigger",
+      "webhookId": "b438499c-44f8-4904-a415-84f6513a25d9",
+      "credentials": {
+        "telegramApi": {
+          "id": "q1I84hjH8lLNDlp9",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=[ROL Y ÁMBITO]\nSos un Agente de Triaje Operativo para una empresa de recolección de residuos urbanos y servicios de higiene urbana. Tu único ámbito es interpretar mensajes desestructurados de vecinos({{ $json.message.text }}), identificar el problema principal, clasificar la prioridad, extraer los datos requeridos (Id_Reclamo, Fecha, Nombre, Contacto, Dirección, Lat, Long, Servicio, Descripción, Prioridad y Próxima Acción) y registrar un ticket limpio utilizando la herramienta correspondiente para que el equipo de operaciones pueda actuar.\n\nNO tenés autorización para: prometer días u horarios exactos de resolución, cerrar reclamos, otorgar compensaciones, modificar datos operativos internos, borrar registros, ejecutar acciones destructivas, brindar asesoramiento legal o comprometer decisiones comerciales de la empresa.\n\n[OBJETIVO OPERATIVO]\nConvertir cada consulta entrante en un registro estructurado enviando a la herramienta los siguientes campos exactos:\n- Id_Reclamo: (Generá un identificador único corto, ej: REC-2026-XXXX o pedile a la tool que lo genere si corresponde).\n- Fecha: (Fecha y hora actual del reporte).\n- Nombre: (Nombre del vecino, o \"Vecino Anónimo\" si no se informó).\n- Contacto: (Medio de contacto, ej: número de Telegram o teléfono).\n- Dirección: (Ubicación o calle informada por el vecino).\n- Lat / Long: (Latitud y Longitud si el mensaje incluye geolocalización o coordenadas de Telegram; si no hay, dejalos vacíos o \"No informado\").\n- Servicio: (Categoría del servicio afectado, ej: Contenedores, Recolección Domiciliaria, Barrido, Microbasurales).\n- Descripción: (Resumen breve y operativo del inconveniente reportado por el vecino).\n- Prioridad: (Alta, Media o Baja, según las reglas).\n- Próxima Acción: (Acción recomendada para la cuadrilla o el supervisor).\n\n[REGLAS DE USO DE HERRAMIENTAS]\n- Usá la herramienta de registro SOLO cuando tengas datos mínimos suficientes: contacto del vecino, ubicación/dirección y una descripción del inconveniente.\n- Si falta un dato clave indispensable (como la ubicación), hacé una única pregunta clara al vecino antes de registrar.\n- No inventes información. Si un dato no fue provisto, dejalo vacío o marcá \"No informado\".\n- Clasificá la prioridad como Alta, Media o Baja:\n  - ALTA: Riesgo sanitario grave, contenedores incendiados, residuos peligrosos/tóxicos en la vía pública, obstrucción total de calles, o reclamos de zonas críticas (hospitales, escuelas).\n  - MEDIA: Contenedores desbordados, falta de recolección en una cuadra o zona según cronograma, acumulación importante en esquinas.\n  - BAJA: Consultas generales sobre horarios, reclamos menores de barrido o solicitudes de información sin impacto inmediato.\n- Si el mensaje mezcla varios problemas, priorizá el de mayor impacto y detallá el resto dentro de la Descripción.\n\n[PROTOCOLO DE ESCALAMIENTO / GUARDRAILS]\n- Si el vecino reporta un peligro inminente (incendio, derrame de químicos, riesgo eléctrico asociado a la basura), marcá prioridad Alta y recomendá despacho urgente de cuadrilla especial o bomberos.\n- Si el usuario pide una acción destructiva, insulta o plantea un caso ajeno a la higiene urbana, respondé con calma y derivá al canal correspondiente.\n- No inventes normativas municipales ni prometas multas a terceros. Solo registrate y reportá al equipo interno.\n\n[ESTILO]\n- Escribí en español rioplatense estándar, claro, empático pero firme y profesional.\n- No uses lenguaje inclusivo con terminaciones en -e, -x o @.\n- Sé breve, específico y orientado a la operación de campo. {{ $json.message.text }}",
+        "options": {
+          "maxIterations": 5
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        16,
+        -64
+      ],
+      "id": "cbbea3d6-2400-478e-961a-b14dcb7d3cf9",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        144
+      ],
+      "id": "efdf17a5-9778-4282-885d-aa54628230be",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "wJCCDwoSqPM8eSBq",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Esta herramienta registra reclamos de vecinos sobre servicios de recolección y limpieza urbana en Google Sheets.\n\nUSÁ esta herramienta cuando el mensaje del vecino contenga como mínimo:\n\nun medio de contacto (nombre, teléfono o usuario de Telegram);\n\nuna ubicación o zona aproximada del problema;\n\nuna descripción del inconveniente con la recolección o vía pública.\n\nAntes de ejecutar la herramienta:\n\nIdentificá el problema principal reportado (ej. contenedor desbordado, falta de recolección, microbasural, rotura de contenedor, residuos peligrosos).\n\nDeterminá la categoría del problema (Contenedores, Recolección Domiciliaria, Barrido/Limpieza, Varios).\n\nClasificá la prioridad como Alta, Media o Baja.\n\nGenerá un resumen breve y operativo del incidente para el equipo de operaciones.\n\nDefiní una próxima acción recomendada para la cuadrilla o supervisor.\n\nREGLAS DE PRIORIDAD:\n\nALTA: Situaciones de riesgo sanitario o ambiental grave, contenedores incendiados, residuos peligrosos/tóxicos en la vía pública, obstrucción total de calles por acumulación de basura, o reclamos reiterados de zonas críticas/estratégicas (hospitales, escuelas).\n\nMEDIA: Contenedores desbordados, falta de recolección en una cuadra o zona específica según cronograma, acumulación importante en esquinas que no bloquea el paso.\n\nBAJA: Consultas generales sobre horarios de recolección, reclamos menores de barrido, solicitudes de información o reportes sin impacto inmediato en la salubridad.\n\nCuando estén disponibles los datos mínimos, ejecutá esta herramienta exactamente UNA vez.\n\nNo inventes información faltante.\nSi el nombre del vecino no fue informado, utilizá \"Vecino Anónimo\".\nSi la dirección exacta no fue informada pero se conoce la zona, registrá lo que esté disponible y acláralo en el resumen.\n\nSi el mensaje contiene varios reclamos distintos, registrá como problema principal el de mayor impacto e incluí los demás en el resumen operativo.\n\nNo uses esta herramienta para consultas ajenas a los servicios de higiene urbana, recolección o mantenimiento de vía pública.",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1tFG-rVGe88gweUjZogVKx351vlk3KEA_mQRzIj5SwI8",
+          "mode": "list",
+          "cachedResultName": "Registrar_reclamo",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tFG-rVGe88gweUjZogVKx351vlk3KEA_mQRzIj5SwI8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tFG-rVGe88gweUjZogVKx351vlk3KEA_mQRzIj5SwI8/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Id_Reclamo",
+              "displayName": "Id_Reclamo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Fecha",
+              "displayName": "Fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Nombre",
+              "displayName": "Nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Contacto",
+              "displayName": "Contacto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Dirección",
+              "displayName": "Dirección",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lat",
+              "displayName": "Lat",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Long",
+              "displayName": "Long",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Servicio",
+              "displayName": "Servicio",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Descripción",
+              "displayName": "Descripción",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Prioridad",
+              "displayName": "Prioridad",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Próxima Acción",
+              "displayName": "Próxima Acción",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "useAppend": false
+        }
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        192,
+        128
+      ],
+      "id": "8038d6f6-e03b-40ab-9a71-bb3b4748caba",
+      "name": "Append row in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Moj90sfzC37j5B2x",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "sendAndWait",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0C01LB3RM2",
+          "mode": "list",
+          "cachedResultName": "reclamos-urbanos"
+        },
+        "message": "Llegó un reclamo nuevo!",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        384,
+        -64
+      ],
+      "id": "ef0d9004-17c8-4078-87f1-7b91208c62ee",
+      "name": "Send message and wait for response",
+      "webhookId": "53b4790d-e4c4-4edd-8d4f-68e05640f0f4",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "xa36uwaDqI04KDMH",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send message and wait for response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "bc013060-b5dd-4d63-9f1e-faed1c9dff5e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0ad35f6aa012bd5f5fd686bb06ca8d190392aac058932d37aa4965fe21d23ad6"
+  },
+  "nodeGroups": [],
+  "id": "spcHrCp0mSThlnHy",
+  "tags": []
+}
